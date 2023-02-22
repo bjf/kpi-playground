@@ -1,3 +1,5 @@
 dgx.os.image.bugs
 nves.triage.bugs
+ngc.vmi.bugs
+nvidia.kvm.bugs
 __pycache__
