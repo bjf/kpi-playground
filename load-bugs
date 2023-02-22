@@ -14,8 +14,16 @@ class TableLoader():
 
 def load(bug):
     m = {
-        'id'     : bug['BugId'],
-        'module' : bug['ModuleInfo']['Value'],
+        'id'          : bug['BugId'],
+        'module'      : bug['ModuleInfo']['Value'],
+        'regression'  : bug['Regression'],
+        'ts_opened'   : bug['RequestUtcDate'],
+        'ts_closed'   : bug['ClosedDate'],
+        'ts_fixed'    : bug['FixedDate'],
+        'requester'   : bug['Requester']['Value'] if bug['Requester'] is not None else 'NULL',
+        'disposition' : bug['Disposition']['Value'],
+        'engineer'    : bug['Engineer']['Value'] if bug['Engineer'] is not None else 'NULL',
+        'os'          : bug['OperatingSystems'],
     }
     BugsTable(m['module']).add(m)
 
