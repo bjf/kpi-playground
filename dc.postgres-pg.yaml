@@ -8,7 +8,7 @@ services:
             POSTGRES_USER: kpis
             POSTGRES_PASSWORD: kpis
         ports:
-            - "5500:5432"
+            - "6500:5432"
         volumes:
             - ./postgres-pg.db.init.sh:/docker-entrypoint-initdb.d/postgres-kpis.db.init.sh
 volumes:
