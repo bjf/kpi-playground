@@ -16,7 +16,7 @@ examples:
     parser = ArgumentParser(description=app_description, epilog=app_epilog, formatter_class=RawDescriptionHelpFormatter)
     args = parser.parse_args()
 
-    for module in ['DGX OS Image', 'NVES - DGX Triage', 'DGX KVM', 'NGC VMI']:
+    for module in ['DGX OS Image', 'NVES - DGX Triage', 'NVIDIA KVM', 'NGC VMI']:
         tbl = BugsTable(module)
         tbl.drop_table()
         tbl.create_schema()
