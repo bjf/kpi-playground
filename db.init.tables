@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+#
+
+from argparse                           import ArgumentParser, RawDescriptionHelpFormatter
+from core.db                            import BugsTable
+
+if __name__ == '__main__':
+    # Command line argument setup and initial processing
+    #
+    app_description = '''
+    '''
+    app_epilog = '''
+examples:
+    listen --help
+    '''
+    parser = ArgumentParser(description=app_description, epilog=app_epilog, formatter_class=RawDescriptionHelpFormatter)
+    args = parser.parse_args()
+
+    for module in ['DGX OS Image', 'NVES - DGX Triage', 'DGX KVM', 'NGC VMI']:
+        tbl = BugsTable(module)
+        tbl.drop_table()
+        tbl.create_schema()
+
+# vi:set ts=4 sw=4 expandtab:
