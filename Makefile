@@ -5,5 +5,5 @@ pg-stop:
 	docker-compose -f dc.postgres-pg.yaml stop
 
 pg-destroy:
-	docker-compose -f dc.postgre-pg.yaml down
+	docker-compose -f dc.postgres-pg.yaml down
 
