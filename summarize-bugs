@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+#
+
+from argparse                           import ArgumentParser, RawDescriptionHelpFormatter
+from bcore.std                          import prej, pro, pre
+from datetime                           import datetime, timedelta
+from core.db                            import BugsTable, BugsStatsTable
+
+
+def timestamp(dt):
+    date = str(dt).split(' ')[0]
+    clean = datetime.strptime(date, '%Y-%m-%d')
+    return clean
+
+
+if __name__ == '__main__':
+    # Command line argument setup and initial processing
+    #
+    app_description = '''
+    '''
+    app_epilog = '''
+examples:
+    '''
+    parser = ArgumentParser(description=app_description, epilog=app_epilog, formatter_class=RawDescriptionHelpFormatter)
+    # parser.add_argument('fid', nargs="?", help='json file to be loaded')
+    parser.add_argument('module', nargs="?", help='Name of the bugs module. This is used to determine which DB table we are working with.')
+    args = parser.parse_args()
+
+    # Fetch the latest bug information from the database. We run through this
+    # to generate new summary data for each timestamp.
+    #
+    db = BugsTable(args.module)
+    q = f"SELECT * FROM {db.table_name} ORDER BY id ASC;"
+    results = db.query(q)
+    pre(results.rowcount)
+
+    bugz = {}
+    rows = results.fetchall()
+    for row in rows:
+        bugz[row['id']] = row
+        # pre(row)
+
+    if True:
+
+        # Initialization
+        #
+        data = {}
+        ts = datetime.strptime('2018-01-01', '%Y-%m-%d')  # Note: these timestamps all have times of 00:00:00
+        while ts < datetime.today():
+            data[ts] = {
+                'opened'  : [],
+                'closed'  : [],
+                'total'   : 0,
+                'nopen'   : 0,
+                'nclosed' : 0,
+            }
+            ts = ts + timedelta(days=1)
+            # pro(ts)
+
+        # Using the buz dictionary, map the date each bug was opened and each day
+        # it was closed to one of the days in the data dictionary.
+        #
+        nopen = 0
+        nclosed = 0
+        total = 0
+        module = args.module
+        for _id in bugz:
+            b = bugz[_id]
+            # o = datetime.strptime(b['opened'].split('T', 1)[0], '%Y-%m-%d')
+            o = timestamp(b['ts_opened'])
+            data[o]['opened'].append(_id)
+            if b['ts_closed'] is not None:
+                # c = datetime.strptime(b['closed'].split('T', 1)[0], '%Y-%m-%d')
+                c = timestamp(b['ts_closed'])
+                data[c]['closed'].append(_id)
+
+            # All timestamps, starting from when this bug is opened, have their
+            # total bugs incremented by 1.
+            #
+            ts = o
+            while ts < datetime.today():
+                data[ts]['total'] += 1
+                ts = ts + timedelta(days=1)
+
+            # From when this bug is opened until the last timestamp, all entries
+            # have their 'open' bugs count incremented by 1.
+            #
+            ts = o
+            end = datetime.today()
+            while ts < end:
+                data[ts]['nopen'] += 1
+                ts = ts + timedelta(days=1)
+
+            # From when this bug is closed until the last timestamp, all entries
+            # have their 'open' bugs count decremented by 1.
+            #
+            if b['ts_closed'] is not None:
+                ts = c
+                while ts < datetime.today():
+                    data[ts]['nopen'] -= 1
+                    ts = ts + timedelta(days=1)
+
+        xl = {}
+        for ts in data:
+            xl[str(ts)] = data[ts]
+        # prej(xl)
+
+        tbl = BugsStatsTable(args.module)
+        for ts in xl:
+            t = datetime.strptime(ts, '%Y-%m-%d %H:%M:%S')  # Note: these timestamps all have times of 00:00:00
+            tbl.update(t, xl[ts]['nopen'], xl[ts]['total'])
+
+# vi:set ts=4 sw=4 expandtab:
