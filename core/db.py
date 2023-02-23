@@ -1,6 +1,7 @@
 from bcore.std                          import pre
 from datetime                           import datetime
 import psycopg2
+import psycopg2.extras
 from os                                 import path
 import json
 
@@ -38,17 +39,30 @@ class DBBase():
             pre(e)
 
     def drop_table(self):
-        q  = f'drop table {self._table_name};'
+        q  = f'drop table {self.table_name};'
         self.execute(q)
+
+    def query(self, query):
+        cursor = self.pgcon.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(query)
+        return cursor
+
+    def fetch_all(self, query):
+        results = self.query(query).fetchall()
+        return results
+
+    def fetch_one(self, query):
+        results = self.query(query).fetchone()
+        return results
 
 class BugsTable(DBBase):
     def __init__(self, module):
         super(BugsTable, self).__init__()
-        self._table_name = f"{module.lower().replace('-', '').replace(' ', '_')}_bugs"
+        self.table_name = f"{module.lower().replace('-', '').replace(' ', '_')}_bugs"
 
     def create_schema(self):
         q  = 'create table if not exists '
-        q += f'{self._table_name} ( '
+        q += f'{self.table_name} ( '
         q += '    id integer primary key,'
         q += '    module varchar,'
         q += '    regression varchar,'
@@ -63,7 +77,7 @@ class BugsTable(DBBase):
         self.execute(q)
 
     def add(self, m):
-        q  = f'INSERT INTO {self._table_name} ('
+        q  = f'INSERT INTO {self.table_name} ('
         q += 'id, '
         q += 'module,'
         q += 'regression,'
@@ -86,4 +100,30 @@ class BugsTable(DBBase):
         q += f'{quote(m["requester"])},'
         q += f'{quote(m["engineer"])}'
         q += ');'
+        self.execute(q)
+
+class BugsStatsTable(DBBase):
+    def __init__(self, module):
+        super(BugsStatsTable, self).__init__()
+        self.table_name = f"{module.lower().replace('-', '').replace(' ', '_')}_bug_stats"
+
+    def create_schema(self):
+        q  = 'create table if not exists '
+        q += f'{self.table_name} ( '
+        q += '    ts timestamp primary key,'
+        q += '    open integer,'
+        q += '    total integer'
+        q += ');'
+        self.execute(q)
+
+    def update(self, ts, total_open, total_all):
+        q  = f"INSERT INTO {self.table_name} VALUES "
+        q += f"('{ts}', {total_open}, {total_all}) "
+        q += f"ON CONFLICT(ts) DO UPDATE SET open = {total_open}, total = {total_all};"
+        self.execute(q)
+
+    def add(self, ts, topen, total):
+        q  = f'INSERT INTO {self._table_name} ('
+        q += 'ts, open, total'
+        q += f") VALUES ({ts}, {topen}, {total});"
         self.execute(q)
